@@ -39,7 +39,7 @@ export const Dashboard = () => {
 	useEffect(() => {
 		const chartContainer = chartRef.current
 		if (chartContainer && exports && sources) {
-			const chart = echarts.init(chartContainer)
+			const chart = echarts.init(chartContainer, null, { renderer: 'svg' })
 
 			const resizeObserver = new ResizeObserver((entries) => {
 				for (const entry of entries) {

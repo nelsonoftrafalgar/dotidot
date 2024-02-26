@@ -5,9 +5,10 @@ import {
 	KeywordSetting
 } from '../store/types'
 
-interface TooltipData {
+export interface TooltipData {
 	data: { value?: string[]; name: string }
 }
+
 export const combineWithoutDuplicates = (a: string[], b: string[]) => [
 	...new Set([...a, ...b])
 ]
