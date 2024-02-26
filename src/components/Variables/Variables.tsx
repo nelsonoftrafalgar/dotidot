@@ -30,7 +30,7 @@ export const Variables = () => {
 	return (
 		<Wrapper>
 			<Title>Variables</Title>
-			<VariableList>
+			<VariableList data-cy='variable-list'>
 				{[...matchedVariable, ...unmatchedVariables].map(
 					({ name, id, placeholderName }) => {
 						const isActive =
