@@ -1,89 +1,215 @@
-import {
-	campaignsAtom,
-	exportsAtom,
-	getDataAtom,
-	sourcesAtom,
-	variablesAtom
-} from './atoms'
-import { combineWithoutDuplicates, parseEndChild } from '../utils/utils'
+import { LABEL, SYMBOL_SIZE, X_COORDS } from './constants'
+import { Link, Node } from './types'
+import { combineWithoutDuplicates, getYCoords } from '../utils/utils'
+import { getDataAtom, linksAtom, nodesAtom } from './atoms'
 import { useAtomValue, useSetAtom } from 'jotai'
 
-import { TreeDataParent } from './types'
 import { toast } from 'react-toastify'
 
 export const useData = () => {
 	const { data } = useAtomValue(getDataAtom)
-	const setVariables = useSetAtom(variablesAtom)
-	const setCampaigns = useSetAtom(campaignsAtom)
-	const setSources = useSetAtom(sourcesAtom)
-	const setExports = useSetAtom(exportsAtom)
+
+	const setNodes = useSetAtom(nodesAtom)
+	const setLinks = useSetAtom(linksAtom)
 
 	if (!data) {
 		toast('Error fetching data')
 		return
 	}
 
-	const feedExports: TreeDataParent = {
-		name: 'Feed exports',
-		children: data.feedExports.feedExports.map(parseEndChild)
-	}
-
-	const additionalSources: TreeDataParent = {
-		name: 'Additional sources',
-		children: data.additionalSources.additionalSources.map(
-			({ name, mappingField, mappingFields }) => ({
+	const [modifiers, variables] = data.variables.variables.reduce(
+		(
+			acc: Node[][],
+			{
+				id,
 				name,
-				value: [mappingField, ...mappingFields]
-			})
-		)
-	}
-
-	const campaigns: TreeDataParent[] =
-		data?.campaignSettings.campaignSettings.map(
-			({
-				name,
+				placeholderName,
 				getConditionsPlaceholders,
-				getPlaceholdersWithoutConditions,
-				adwordsSetting,
-				keywordSettings,
-				baseAdtexts,
-				bidRules
-			}) => {
-				return {
-					name,
-					value: combineWithoutDuplicates(
-						getConditionsPlaceholders,
-						getPlaceholdersWithoutConditions
-					),
-					children: [
-						{
-							name: 'Adwords Setting',
-							value: adwordsSetting?.getPlaceholdersWithoutConditions
-						},
-						{
-							name: 'Keyword Settings',
-							children: keywordSettings.map(parseEndChild)
-						},
-						{
-							name: 'Base ad text',
-							children: baseAdtexts.map(parseEndChild)
-						},
-						{
-							name: 'Bid rules',
-							children: bidRules.map(({ name, getConditionsPlaceholders }) => {
-								return {
-									name,
-									value: getConditionsPlaceholders
-								}
-							})
-						}
-					]
-				}
+				getPlaceholdersWithoutConditions
+			},
+			index
+		) => {
+			const isModifier = id.includes('Modifier')
+			const variable: Node = {
+				id: placeholderName,
+				name,
+				category: isModifier ? 1 : 0,
+				symbolSize: SYMBOL_SIZE.large,
+				x: isModifier ? X_COORDS.modifier : X_COORDS.variable,
+				y: getYCoords(index),
+				label: LABEL,
+				variables: combineWithoutDuplicates(
+					getConditionsPlaceholders,
+					getPlaceholdersWithoutConditions
+				)
 			}
-		)
+			if (isModifier) {
+				acc[1].push(variable)
+			} else {
+				acc[0].push(variable)
+			}
+			return acc
+		},
+		[[], []]
+	)
 
-	setCampaigns(campaigns)
-	setExports(feedExports)
-	setSources(additionalSources)
-	setVariables(data.variables.variables)
+	const feedExports: Node[] = data.feedExports.feedExports.map(
+		(
+			{ name, getConditionsPlaceholders, getPlaceholdersWithoutConditions },
+			index
+		) => {
+			return {
+				id: name,
+				name,
+				category: 2,
+				symbolSize: SYMBOL_SIZE.small,
+				x: X_COORDS.feedExport,
+				y: getYCoords(index),
+				label: LABEL,
+				variables: combineWithoutDuplicates(
+					getConditionsPlaceholders,
+					getPlaceholdersWithoutConditions
+				)
+			}
+		}
+	)
+
+	const additionalSources = data.additionalSources.additionalSources.map(
+		({ name, mappingField, mappingFields }, index) => {
+			return {
+				id: name,
+				name,
+				category: 3,
+				symbolSize: SYMBOL_SIZE.small,
+				x: X_COORDS.additionalSource,
+				y: getYCoords(index),
+				label: LABEL,
+				variables: [mappingField, ...mappingFields]
+			}
+		}
+	)
+
+	const campaigns = data.campaignSettings.campaignSettings.map(
+		(
+			{ name, getConditionsPlaceholders, getPlaceholdersWithoutConditions },
+			index
+		) => {
+			return {
+				id: name,
+				name,
+				category: 4,
+				symbolSize: SYMBOL_SIZE.small,
+				x: X_COORDS.campaign,
+				y: getYCoords(index),
+				label: LABEL,
+				variables: combineWithoutDuplicates(
+					getConditionsPlaceholders,
+					getPlaceholdersWithoutConditions
+				)
+			}
+		}
+	)
+
+	const keywordSettings = data.campaignSettings.campaignSettings.flatMap(
+		(campaignSetting) =>
+			campaignSetting.keywordSettings.map(
+				(
+					{ name, getConditionsPlaceholders, getPlaceholdersWithoutConditions },
+					index
+				) => {
+					return {
+						id: name,
+						name,
+						category: 5,
+						symbolSize: SYMBOL_SIZE.small,
+						x: X_COORDS.keywordSetting,
+						y: getYCoords(index),
+						label: LABEL,
+						variables: combineWithoutDuplicates(
+							getConditionsPlaceholders,
+							getPlaceholdersWithoutConditions
+						)
+					}
+				}
+			)
+	)
+
+	const adwordSettings = data.campaignSettings.campaignSettings.map(
+		({ adwordsSetting }, index) => {
+			return {
+				id: 'Adword setting',
+				name: 'Adword setting',
+				category: 6,
+				symbolSize: SYMBOL_SIZE.small,
+				x: X_COORDS.adwordSetting,
+				y: getYCoords(index),
+				label: LABEL,
+				variables: adwordsSetting.getPlaceholdersWithoutConditions
+			}
+		}
+	)
+
+	const baseAdtexts = data.campaignSettings.campaignSettings.flatMap(
+		(campaignSetting) =>
+			campaignSetting.baseAdtexts.map(
+				(
+					{ name, getConditionsPlaceholders, getPlaceholdersWithoutConditions },
+					index
+				) => {
+					return {
+						id: name,
+						name,
+						category: 7,
+						symbolSize: SYMBOL_SIZE.small,
+						x: X_COORDS.baseAdtext,
+						y: getYCoords(index),
+						label: LABEL,
+						variables: combineWithoutDuplicates(
+							getConditionsPlaceholders,
+							getPlaceholdersWithoutConditions
+						)
+					}
+				}
+			)
+	)
+
+	const bidRules = data.campaignSettings.campaignSettings.flatMap(
+		(campaignSetting) =>
+			campaignSetting.bidRules.map(
+				({ name, getConditionsPlaceholders }, index) => {
+					return {
+						id: name,
+						name,
+						category: 8,
+						symbolSize: SYMBOL_SIZE.small,
+						x: X_COORDS.bidRule,
+						y: getYCoords(index),
+						label: LABEL,
+						variables: getConditionsPlaceholders
+					}
+				}
+			)
+	)
+
+	const combinedData = [
+		...variables,
+		...modifiers,
+		...feedExports,
+		...additionalSources,
+		...campaigns,
+		...keywordSettings,
+		...adwordSettings,
+		...baseAdtexts,
+		...bidRules
+	]
+
+	const links = combinedData.reduce((acc: Link[], { variables, id }) => {
+		return [
+			...acc,
+			...variables.map((varName) => ({ source: id, target: varName }))
+		]
+	}, [])
+
+	setLinks(links)
+	setNodes(combinedData)
 }

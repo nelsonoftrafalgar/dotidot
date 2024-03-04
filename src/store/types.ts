@@ -37,7 +37,7 @@ export interface CampaignSetting {
 	name: string
 	getPlaceholdersWithoutConditions: string[]
 	getConditionsPlaceholders: string[]
-	adwordsSetting?: AdwordsSetting
+	adwordsSetting: AdwordsSetting
 	keywordSettings: KeywordSetting[]
 	baseAdtexts: BaseAdtext[]
 	bidRules: BidRule[]
@@ -72,15 +72,32 @@ export interface DataSourceVariable {
 	id: string
 	name: string
 	placeholderName: string
+	getPlaceholdersWithoutConditions: string[]
+	getConditionsPlaceholders: string[]
 }
 
-export interface TreeDataChild {
+export interface Node {
+	id: string
 	name: string
-	children?: TreeDataChild[]
-	value?: string[]
+	variables: string[]
+	symbolSize: number
+	category: number
+	label: { show: boolean }
+	x: number
+	y: number
 }
 
-export interface TreeDataParent {
+export interface Link {
+	source: string
+	target: string
+}
+
+export interface Category {
 	name: string
-	children: TreeDataChild[]
+}
+
+export interface Graph {
+	nodes: Node[]
+	links: Link[]
+	categories: Category[]
 }

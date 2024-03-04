@@ -1,44 +1,20 @@
 import * as echarts from 'echarts'
 
 import { ChartContainer, Container, Header, Structure } from './styles'
-import { areArraysEqual, formatTooltip, getSymbol } from '../../utils/utils'
-import {
-	campaignsAtom,
-	exportsAtom,
-	selectedNodeAtom,
-	selectedVariableAtom,
-	sourcesAtom
-} from '../../store/atoms'
-import { useAtom, useAtomValue } from 'jotai'
-import { useCallback, useEffect, useRef } from 'react'
+import { linksAtom, nodesAtom } from '../../store/atoms'
+import { useEffect, useRef } from 'react'
 
-import { TreeDataChild } from '../../store/types'
-import { Variables } from '../Variables/Variables'
+import { formatTooltip } from '../../utils/utils'
+import { useAtomValue } from 'jotai'
 
 export const Dashboard = () => {
 	const chartRef = useRef(null)
-	const campaigns = useAtomValue(campaignsAtom)
-	const sources = useAtomValue(sourcesAtom)
-	const exports = useAtomValue(exportsAtom)
-	const [selectedVariable, setSelectedVariable] = useAtom(selectedVariableAtom)
-	const [selectedNode, setSelectedNode] = useAtom(selectedNodeAtom)
-
-	const handleChartClick = useCallback(
-		(params: echarts.ECElementEvent) => {
-			const { value } = params.data?.valueOf() as TreeDataChild
-			if (areArraysEqual(value ?? [], selectedNode)) {
-				setSelectedNode([])
-			} else {
-				setSelectedNode(value ?? [])
-			}
-			setSelectedVariable(null)
-		},
-		[selectedNode, setSelectedNode, setSelectedVariable]
-	)
+	const nodes = useAtomValue(nodesAtom)
+	const links = useAtomValue(linksAtom)
 
 	useEffect(() => {
 		const chartContainer = chartRef.current
-		if (chartContainer && exports && sources) {
+		if (chartContainer) {
 			const chart = echarts.init(chartContainer, null, { renderer: 'svg' })
 
 			const resizeObserver = new ResizeObserver((entries) => {
@@ -51,89 +27,72 @@ export const Dashboard = () => {
 
 			resizeObserver.observe(chartContainer)
 
-			const data = [
-				{
-					name: 'Data structure',
-					children: [exports, sources, ...campaigns]
-				}
-			]
+			const graph = {
+				nodes,
+				links,
+				categories: [
+					{ name: 'Variable' },
+					{ name: 'Modifier' },
+					{ name: 'Feed export' },
+					{ name: 'Additional sources' },
+					{ name: 'Campaign' },
+					{ name: 'Keyword settings' },
+					{ name: 'Adword settings' },
+					{ name: 'Base ad texts' },
+					{ name: 'Bid rules' }
+				]
+			}
 
-			const options = {
+			const options: echarts.EChartsCoreOption = {
 				tooltip: {
-					trigger: 'item',
-					triggerOn: 'mousemove',
-					formatter: formatTooltip
+					formatter: formatTooltip(graph)
 				},
-
+				legend: [
+					{
+						data: graph.categories.map(({ name }) => name)
+					}
+				],
+				animationDuration: 100,
 				series: [
 					{
-						type: 'tree',
-
-						data,
-
-						top: '15%',
-						left: '15%',
-						bottom: '15%',
-						right: '15%',
-
-						symbolSize: 25,
-						symbol: getSymbol(selectedVariable, selectedNode),
-
+						type: 'graph',
+						layout: 'none',
+						data: graph.nodes,
+						links: graph.links,
+						categories: graph.categories,
 						label: {
-							position: 'left',
-							verticalAlign: 'middle',
-							align: 'right',
-							fontSize: 16,
-							color: '#818a98',
+							position: 'right',
+							formatter: '{b}',
 							overflow: 'truncate',
 							ellipsis: '...',
 							width: 60
 						},
-
-						itemStyle: {
-							borderWidth: 2,
-							borderRadius: 10,
-							color: '#6b1a86'
+						lineStyle: {
+							color: 'source'
 						},
-
-						leaves: {
-							label: {
-								position: 'right',
-								verticalAlign: 'middle',
-								align: 'left'
+						emphasis: {
+							focus: 'adjacency',
+							lineStyle: {
+								width: 5
 							}
-						},
-
-						expandAndCollapse: false,
-						animationDuration: 0,
-						animationDurationUpdate: 0
+						}
 					}
 				]
 			}
 
 			chart.setOption(options)
 
-			chart.on('click', handleChartClick)
-
 			return () => {
 				resizeObserver.unobserve(chartContainer)
 				chart.dispose()
 			}
 		}
-	}, [
-		campaigns,
-		sources,
-		exports,
-		handleChartClick,
-		selectedNode,
-		selectedVariable
-	])
+	}, [nodes, links])
 
 	return (
 		<Container>
-			<Variables />
 			<Structure>
-				<Header />
+				<Header>Data structure</Header>
 				<ChartContainer ref={chartRef} />
 			</Structure>
 		</Container>

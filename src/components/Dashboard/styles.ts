@@ -9,13 +9,14 @@ export const Container = styled.div`
 `
 
 export const Structure = styled.div`
-	width: calc(100% - 300px);
+	width: 100%;
 `
 
 export const Header = styled.div`
 	width: 100%;
 	padding: ${({ theme }) => theme.gridUnit * 4}px;
 	background-color: ${({ theme }) => theme.colors.white};
+	text-align: center;
 	border-bottom: 4px solid ${({ theme }) => theme.colors.border};
 	height: 55px;
 `
