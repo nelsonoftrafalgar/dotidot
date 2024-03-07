@@ -1,6 +1,6 @@
 import { LABEL, SYMBOL_SIZE, X_COORDS } from './constants'
 import { Link, Node } from './types'
-import { combineWithoutDuplicates, getYCoords } from '../utils/utils'
+import { combineWithoutDuplicates, getName, getYCoords } from '../utils/utils'
 import { getDataAtom, linksAtom, nodesAtom } from './atoms'
 import { useAtomValue, useSetAtom } from 'jotai'
 
@@ -38,7 +38,7 @@ export const useData = () => {
 				x: isModifier ? X_COORDS.modifier : X_COORDS.variable,
 				y: getYCoords(index),
 				label: LABEL,
-				variables: combineWithoutDuplicates(
+				dependencies: combineWithoutDuplicates(
 					getConditionsPlaceholders,
 					getPlaceholdersWithoutConditions
 				)
@@ -66,7 +66,7 @@ export const useData = () => {
 				x: X_COORDS.feedExport,
 				y: getYCoords(index),
 				label: LABEL,
-				variables: combineWithoutDuplicates(
+				dependencies: combineWithoutDuplicates(
 					getConditionsPlaceholders,
 					getPlaceholdersWithoutConditions
 				)
@@ -84,14 +84,21 @@ export const useData = () => {
 				x: X_COORDS.additionalSource,
 				y: getYCoords(index),
 				label: LABEL,
-				variables: [mappingField, ...mappingFields]
+				dependencies: [mappingField, ...mappingFields]
 			}
 		}
 	)
 
 	const campaigns = data.campaignSettings.campaignSettings.map(
 		(
-			{ name, getConditionsPlaceholders, getPlaceholdersWithoutConditions },
+			{
+				name,
+				getConditionsPlaceholders,
+				getPlaceholdersWithoutConditions,
+				keywordSettings,
+				baseAdtexts,
+				bidRules
+			},
 			index
 		) => {
 			return {
@@ -102,10 +109,15 @@ export const useData = () => {
 				x: X_COORDS.campaign,
 				y: getYCoords(index),
 				label: LABEL,
-				variables: combineWithoutDuplicates(
-					getConditionsPlaceholders,
-					getPlaceholdersWithoutConditions
-				)
+				dependencies: [
+					...combineWithoutDuplicates(
+						getConditionsPlaceholders,
+						getPlaceholdersWithoutConditions
+					),
+					...keywordSettings.map(getName),
+					...baseAdtexts.map(getName),
+					...bidRules.map(getName)
+				]
 			}
 		}
 	)
@@ -123,9 +135,9 @@ export const useData = () => {
 						category: 5,
 						symbolSize: SYMBOL_SIZE.small,
 						x: X_COORDS.keywordSetting,
-						y: getYCoords(index),
+						y: getYCoords(index + 2),
 						label: LABEL,
-						variables: combineWithoutDuplicates(
+						dependencies: combineWithoutDuplicates(
 							getConditionsPlaceholders,
 							getPlaceholdersWithoutConditions
 						)
@@ -142,9 +154,9 @@ export const useData = () => {
 				category: 6,
 				symbolSize: SYMBOL_SIZE.small,
 				x: X_COORDS.adwordSetting,
-				y: getYCoords(index),
+				y: getYCoords(index + 2),
 				label: LABEL,
-				variables: adwordsSetting.getPlaceholdersWithoutConditions
+				dependencies: adwordsSetting.getPlaceholdersWithoutConditions
 			}
 		}
 	)
@@ -162,9 +174,9 @@ export const useData = () => {
 						category: 7,
 						symbolSize: SYMBOL_SIZE.small,
 						x: X_COORDS.baseAdtext,
-						y: getYCoords(index),
+						y: getYCoords(index + 2),
 						label: LABEL,
-						variables: combineWithoutDuplicates(
+						dependencies: combineWithoutDuplicates(
 							getConditionsPlaceholders,
 							getPlaceholdersWithoutConditions
 						)
@@ -183,9 +195,9 @@ export const useData = () => {
 						category: 8,
 						symbolSize: SYMBOL_SIZE.small,
 						x: X_COORDS.bidRule,
-						y: getYCoords(index),
+						y: getYCoords(index + 2),
 						label: LABEL,
-						variables: getConditionsPlaceholders
+						dependencies: getConditionsPlaceholders
 					}
 				}
 			)
@@ -203,10 +215,10 @@ export const useData = () => {
 		...bidRules
 	]
 
-	const links = combinedData.reduce((acc: Link[], { variables, id }) => {
+	const links = combinedData.reduce((acc: Link[], { dependencies, id }) => {
 		return [
 			...acc,
-			...variables.map((varName) => ({ source: id, target: varName }))
+			...dependencies.map((dependency) => ({ source: id, target: dependency }))
 		]
 	}, [])
 

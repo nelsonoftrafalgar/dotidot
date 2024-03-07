@@ -1,4 +1,4 @@
-import { Graph } from '../store/types'
+import { BaseAdtext, BidRule, Graph, KeywordSetting } from '../store/types'
 
 export interface TooltipData {
 	data: { id: string; name: string; source?: string; target: string }
@@ -18,14 +18,16 @@ export const formatTooltip =
 		return graph.links.reduce((acc, { source, target }) => {
 			if (source === data.id) {
 				const node = graph.nodes.find(({ id }) => id === target)
-				acc += `- ${node?.name} <br />`
+				acc += node ? `- ${node?.name} <br />` : ''
 			}
 			if (target === data.id) {
 				const node = graph.nodes.find(({ id }) => id === source)
-				acc += `- ${node?.name} <br />`
+				acc += node ? `- ${node?.name} <br />` : ''
 			}
 			return acc
 		}, `${data.name} <br />`)
 	}
 
 export const getYCoords = (index: number) => (index + 2) * 50
+
+export const getName = ({ name }: BidRule | BaseAdtext | KeywordSetting) => name

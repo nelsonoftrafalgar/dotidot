@@ -1,6 +1,7 @@
 import {
 	combineWithoutDuplicates,
 	formatTooltip,
+	getName,
 	getYCoords
 } from '../utils/utils'
 
@@ -73,7 +74,7 @@ describe('formatTooltip', () => {
 			{
 				id: '1',
 				name: 'Node 1',
-				variables: [],
+				dependencies: [],
 				symbolSize: 10,
 				category: 0,
 				label: { show: true },
@@ -83,7 +84,7 @@ describe('formatTooltip', () => {
 			{
 				id: '2',
 				name: 'Node 2',
-				variables: [],
+				dependencies: [],
 				symbolSize: 10,
 				category: 1,
 				label: { show: true },
@@ -113,5 +114,33 @@ describe('formatTooltip', () => {
 		const tooltipData = { data: { id: '3', name: 'Node 3', target: '2' } }
 		const tooltipFormatter = formatTooltip(mockGraph)
 		expect(tooltipFormatter(tooltipData)).toBe('Node 3 <br />')
+	})
+})
+
+describe('getName function tests', () => {
+	test('should correctly return the name of a KeywordSetting', () => {
+		const keywordSettingMock = {
+			name: 'KeywordSettingName',
+			getPlaceholdersWithoutConditions: ['placeholder1', 'placeholder2'],
+			getConditionsPlaceholders: ['condition1']
+		}
+		expect(getName(keywordSettingMock)).toBe('KeywordSettingName')
+	})
+
+	test('should correctly return the name of a BaseAdtext', () => {
+		const baseAdtextMock = {
+			name: 'BaseAdtextName',
+			getPlaceholdersWithoutConditions: ['placeholderA', 'placeholderB'],
+			getConditionsPlaceholders: ['conditionA']
+		}
+		expect(getName(baseAdtextMock)).toBe('BaseAdtextName')
+	})
+
+	test('should correctly return the name of a BidRule', () => {
+		const bidRuleMock = {
+			name: 'BidRuleName',
+			getConditionsPlaceholders: ['conditionX']
+		}
+		expect(getName(bidRuleMock)).toBe('BidRuleName')
 	})
 })

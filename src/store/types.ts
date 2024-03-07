@@ -79,7 +79,7 @@ export interface DataSourceVariable {
 export interface Node {
 	id: string
 	name: string
-	variables: string[]
+	dependencies: string[]
 	symbolSize: number
 	category: number
 	label: { show: boolean }
